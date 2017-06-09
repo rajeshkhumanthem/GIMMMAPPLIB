@@ -14,6 +14,10 @@
 
 #define PRINT_JSON_DOC(out, jsondoc) \
     QString str = jsondoc.toJson(QJsonDocument::Indented); \
-    out << str.toStdString();
+    out << str.toStdString() << std::endl;
+
+#define PRINT_JSON_DOC_RAW(out, jsondoc) \
+    QString str = jsondoc.toJson(QJsonDocument::Compact); \
+    out << str.toStdString() << std::endl;
 
 #endif // MACROS_H

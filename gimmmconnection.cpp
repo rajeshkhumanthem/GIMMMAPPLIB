@@ -10,17 +10,24 @@
 #include <iostream>
 #include <sstream>
 
+/*!
+ * \brief GimmmConnection::GimmmConnection
+ */
 GimmmConnection::GimmmConnection()
       :__connectAttempt(0),
        __connectWaitTime(5000)
 {
     __in.setVersion(QDataStream::Qt_5_8);
-    connect( &__socket, &QAbstractSocket::connected, this, &GimmmConnection::handleConnected, Qt::DirectConnection);
-    connect( &__socket, &QAbstractSocket::disconnected, this, &GimmmConnection::handleDisconnected, Qt::DirectConnection);
-    connect( &__socket, &QAbstractSocket::readyRead, this, &GimmmConnection::handleReadyRead, Qt::DirectConnection);
+    connect( &__socket, &QAbstractSocket::connected,
+             this, &GimmmConnection::handleConnected, Qt::DirectConnection);
+    connect( &__socket, &QAbstractSocket::disconnected,
+             this, &GimmmConnection::handleDisconnected, Qt::DirectConnection);
+    connect( &__socket, &QAbstractSocket::readyRead,
+             this, &GimmmConnection::handleReadyRead, Qt::DirectConnection);
     connect( &__socket, static_cast<void(QAbstractSocket::*)(QAbstractSocket::SocketError)>(&QAbstractSocket::error),
              this, &GimmmConnection::handleError, Qt::DirectConnection);
 }
+
 
 /*!
  * \brief GimmmConnection::~GimmmConnection
@@ -28,6 +35,7 @@ GimmmConnection::GimmmConnection()
 GimmmConnection::~GimmmConnection()
 {
 }
+
 
 /*!
  * \brief GimmmConnection::connectToServer
@@ -46,6 +54,7 @@ void GimmmConnection::connectToServer(
 
     tryConnect();
 }
+
 
 /*!
  * \brief GimmmConnection::tryConnect
@@ -73,14 +82,15 @@ void GimmmConnection::handleConnected()
 
     QJsonDocument jdoc;
     QJsonObject root;
-    root["message_type"]= "LOGON";
+    root["message_type"]= "BAL_LOGON";
     root["session_id"] = __sessionId.c_str();
     jdoc.setObject(root);
-    PRINT_JSON_DOC(std::cout, jdoc);
+    //PRINT_JSON_DOC(std::cout, jdoc);
 
     emit connectionHandshakeStarted();
     sendMessage(jdoc);
 }
+
 
 /*!
  * \brief GimmmConnection::handleDisconnected
@@ -90,6 +100,7 @@ void GimmmConnection::handleDisconnected()
     emit connectionLost();
     tryConnect();
 }
+
 
 /*!
  * \brief GimmmConnection::handleReadyRead
@@ -106,19 +117,18 @@ void GimmmConnection::handleReadyRead()
     if (!__in.commitTransaction())
         return;
 
-    std::cout<< "-----------------------START NEW PHANTOM Message----------------------\n" ;
+    //std::cout<< "===============================START NEW GIMMM MESSAGE===========================================\n" ;
     try
     {
         QJsonDocument jsondoc = QJsonDocument::fromBinaryData(bytes);
-        PRINT_JSON_DOC(std::cout, jsondoc);
+        //PRINT_JSON_DOC_RAW(std::cout, jsondoc);
         handleNewMessage(jsondoc);
     }
     catch(std::exception& err)
     {
         PRINT_EXCEPTION_STRING(std::cout, err) << std::endl;
     }
-
-    std::cout<< "-----------------------END NEW PHANTOM Message --------------------" << std::endl;
+    //std::cout<< "===============================END NEW GIMMM MESSAGE=============================================" << std::endl;
 }
 
 
@@ -152,7 +162,8 @@ void GimmmConnection::handleNewMessage(
 void GimmmConnection::handleLogonResponseMessage(
         const QJsonDocument& jdoc)
 {
-    std::cout << "Processing phantom logon reponse..." << std::endl;
+    //std::cout<< "----------------------------START HandleLogonResponseMessage-------------------------------------------\n" ;
+    //std::cout << "Processing phantom logon reponse..." << std::endl;
     std::string status = jdoc.object().value("status").toString().toStdString();
     if (status == "SUCCESS")
     {
@@ -162,6 +173,7 @@ void GimmmConnection::handleLogonResponseMessage(
         QString reject_reason = jdoc.object().value("error_description").toString();
         emit connectionError(reject_reason);
     }
+    //std::cout<< "----------------------------END HandleLogonResponseMessage-------------------------------------------\n" ;
 }
 
 
@@ -171,11 +183,11 @@ void GimmmConnection::handleLogonResponseMessage(
  */
 void GimmmConnection::handleUpstreamMessage(const QJsonDocument& msg)
 {
-  QJsonDocument upstream;
-  QJsonObject root = msg.object().value("upstream_data").toObject();
-  upstream.setObject(root);
+    QJsonDocument upstream;
+    QJsonObject root = msg.object().value("upstream_data").toObject();
+    upstream.setObject(root);
 
-  emit newUpstreamMessage(upstream);
+    emit newUpstreamMessage(upstream);
 }
 
 
@@ -196,7 +208,7 @@ void GimmmConnection::handleDownstreamRejectMessage(
  */
 void GimmmConnection::handleError(QAbstractSocket::SocketError error)
 {
-    std::cout << "Seabus messaging socket error:" << error << std::endl;
+    //std::cout << "Seabus messaging socket error:" << error << std::endl;
     emit connectionError(__socket.errorString());
 }
 
@@ -226,7 +238,7 @@ void GimmmConnection::sendMessage(
         out << msg.toBinaryData();
 
         //TODO delete later
-        std::cout << "Attempting to write json message of length <" << m.length() <<  "> bytes." << std::endl;
+        //std::cout << "Attempting to write json message of length <" << m.length() <<  "> bytes." << std::endl;
         qint64 bytes = __socket.write(m);
     }
 }

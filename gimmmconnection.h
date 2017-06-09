@@ -51,6 +51,7 @@ class GIMMMLIBSHARED_EXPORT GimmmConnection: public QObject
         void newDownstreamRejectMessage(
             const QJsonDocument& orig_msg,
             const QString& reject_reason);
+        void newDownstreamRejectMessage(const QJsonDocument& orig_msg);
     private:
         void handleNewMessage(const QJsonDocument& jdoc);
         void handleLogonResponseMessage(const QJsonDocument& jdoc);
