@@ -1,7 +1,13 @@
 #include "message.h"
-#include "macros.h"
 
 #include <sstream>
+
+#define THROW_INVALID_ARGUMENT_EXCEPTION(errmsg) \
+  std::stringstream out; \
+  out << "Exception @ [File:" << __FILE__ \
+      << ", Line:" << __LINE__ << ", errormsg:" \
+      << errmsg << "]"; throw std::invalid_argument(out.str().c_str())
+
 
 Message::Message(MessageType type)
     :__messageType(type), __timeToLive(10)

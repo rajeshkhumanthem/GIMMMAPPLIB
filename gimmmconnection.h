@@ -1,7 +1,7 @@
 #ifndef GIMMMCONNECTION_H
 #define GIMMMCONNECTION_H
 
-#include "gimmmlib_global.h"
+#include "exponentialbackoff.h"
 
 #include <memory>
 
@@ -14,7 +14,7 @@
 #include <QtNetwork/QHostAddress>
 
 
-class GIMMMLIBSHARED_EXPORT GimmmConnection: public QObject
+class GimmmConnection: public QObject
 {
         Q_OBJECT
         QTcpSocket          __socket;
@@ -24,6 +24,7 @@ class GIMMMLIBSHARED_EXPORT GimmmConnection: public QObject
         std::string         __sessionId;
         int                 __connectAttempt;
         int                 __connectWaitTime;
+        ExponentialBackoff  __exBackOff;
     public:
         GimmmConnection();
         virtual ~GimmmConnection();
