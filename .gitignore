@@ -33,4 +33,5 @@
 
 # qt meta files
 *.pro.user
-
+.DS_Store
+*swp

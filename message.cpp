@@ -12,9 +12,32 @@
 Message::Message(MessageType type)
     :__messageType(type), __timeToLive(10)
 {
-    if (type == MessageType::ACK)
-        __typeString = "ack";
+    switch (type)
+    {
+        case MessageType::LOGON:
+        {
+            __typeString = "LOGON";
+            break;
+        }
+        case MessageType::ACK:
+        {
+            __typeString = "ACK";
+            break;
+        }
+        case MessageType::DOWNSTREAM:
+        {
+            __typeString = "DOWNSTREAM";
+           break;
+        }
+        default:
+        {
+            std::stringstream err;
+            err << "Unknow Message type[" << (int)type << "]";
+            THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
+        }
+    }
 }
+
 
 QJsonDocument Message::toJson()
 {
@@ -131,14 +154,12 @@ void Message::validateDownstream() const
         err << "Invalid DOWNSTREAM message. Both 'to' && 'condition' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
-    /*
     if (__messageId.empty() == true)
     {
         std::stringstream err;
         err << "Invalid DOWNSTREAM message. 'message_id' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
-    */
     // max is 4 week as per FCM documentation.
     if (__timeToLive < MIN_TTL || __timeToLive > MAX_TTL )
     {

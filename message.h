@@ -20,17 +20,24 @@ namespace msgfieldnames
 {
   static const char* const MESSAGE_TYPE     = "message_type";
   static const char* const MESSAGE_ID       = "message_id";
+  static const char* const GROUP_ID         = "group_id";
+  static const char* const SESSION_ID       = "session_id";
   static const char* const ERROR            = "error";
   static const char* const ERROR_DESC       = "error_description";
-  static const char* const DATA             = "data";
+  static const char* const FCM_DATA         = "fcm_data";
 }
 
 
-enum class MessageType: int
+enum class MessageType: char
 {
-  UNKNOWN = 0,
-  ACK = 1,
-  DOWNSTREAM = 2
+    UNKNOWN = 0,
+    LOGON = 1,            // BAL --> GIMMM
+    LOGON_RESPONSE,       // GIMMM --> BAL
+    ACK = 2,              // BAL --> GIMMM
+    UPSTREAM = 3,         // GIMMM --> BAL
+    DOWNSTREAM = 4,       // BAL --> GIMMM
+    DOWNSTREAM_ACK = 5,   // GIMMM --> BAL
+    DOWNSTREAM_REJECT = 6 // GIMMM --> BAL
 };
 
 

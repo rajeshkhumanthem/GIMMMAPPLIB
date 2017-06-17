@@ -116,11 +116,11 @@ void GimmmConnection::handleConnected()
 
     QJsonDocument jdoc;
     QJsonObject root;
-    root["message_type"]= "BAL_LOGON";
+    root["message_type"]= "LOGON";
     root["session_id"] = __sessionId.c_str();
     jdoc.setObject(root);
-    //PRINT_JSON_DOC(std::cout, jdoc);
 
+    //PRINT_JSON_DOC(std::cout, jdoc);
     emit connectionHandshakeStarted();
     sendMessage(jdoc);
 }
