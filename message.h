@@ -18,6 +18,7 @@ typedef std::uint64_t MessageId_t;
  */
 namespace msgfieldnames
 {
+  static const char* const STATUS           = "status";
   static const char* const MESSAGE_TYPE     = "message_type";
   static const char* const MESSAGE_ID       = "message_id";
   static const char* const GROUP_ID         = "group_id";

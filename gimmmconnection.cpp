@@ -1,5 +1,6 @@
 #include "gimmmconnection.h"
 #include "exponentialbackoff.h"
+#include "message.h"
 
 #include <QDataStream>
 #include <QJsonDocument>
@@ -116,8 +117,8 @@ void GimmmConnection::handleConnected()
 
     QJsonDocument jdoc;
     QJsonObject root;
-    root["message_type"]= "LOGON";
-    root["session_id"] = __sessionId.c_str();
+    root[msgfieldnames::MESSAGE_TYPE]= "LOGON";
+    root[msgfieldnames::SESSION_ID] = __sessionId.c_str();
     jdoc.setObject(root);
 
     //PRINT_JSON_DOC(std::cout, jdoc);
@@ -196,14 +197,13 @@ void GimmmConnection::handleNewMessage(
 void GimmmConnection::handleLogonResponseMessage(
         const QJsonDocument& jdoc)
 {
-    //std::cout << "Processing phantom logon reponse..." << std::endl;
     std::string status = jdoc.object().value("status").toString().toStdString();
     if (status == "SUCCESS")
     {
         emit sessionEstablished();
     }else
     {
-        QString reject_reason = jdoc.object().value("error_description").toString();
+        QString reject_reason = jdoc.object().value(msgfieldnames::ERROR_DESC).toString();
         emit connectionError(reject_reason);
     }
 }
@@ -216,7 +216,7 @@ void GimmmConnection::handleLogonResponseMessage(
 void GimmmConnection::handleUpstreamMessage(const QJsonDocument& msg)
 {
     QJsonDocument upstream;
-    QJsonObject root = msg.object().value("upstream_data").toObject();
+    QJsonObject root = msg.object().value(msgfieldnames::FCM_DATA).toObject();
     upstream.setObject(root);
 
     emit newUpstreamMessage(upstream);
@@ -230,7 +230,7 @@ void GimmmConnection::handleUpstreamMessage(const QJsonDocument& msg)
 void GimmmConnection::handleDownstreamRejectMessage(
         const QJsonDocument& jdoc)
 {
-    QString reject_reason = jdoc.object().value("error_description").toString();
+    QString reject_reason = jdoc.object().value(msgfieldnames::ERROR_DESC).toString();
     emit newDownstreamRejectMessage(jdoc, reject_reason);
 }
 
