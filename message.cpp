@@ -10,153 +10,115 @@
 
 
 Message::Message(MessageType type)
-    :__messageType(type), __timeToLive(10)
+    :__messageType(type)
 {
-    switch (type)
-    {
-        case MessageType::LOGON:
-        {
-            __typeString = "LOGON";
-            break;
-        }
-        case MessageType::ACK:
-        {
-            __typeString = "ACK";
-            break;
-        }
-        case MessageType::DOWNSTREAM:
-        {
-            __typeString = "DOWNSTREAM";
-           break;
-        }
-        default:
-        {
-            std::stringstream err;
-            err << "Unknow Message type[" << (int)type << "]";
-            THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-        }
-    }
+
 }
 
-
-QJsonDocument Message::toJson()
+Message::~Message()
 {
-    switch(__messageType)
-    {
-        case MessageType::ACK:
-        {
-            return createAck();
-            break;
-        }
-        case MessageType::DOWNSTREAM:
-        {
-            return createDownstream();
-            break;
-        }
-        default:
-        {
-            std::stringstream err;
-            err << "Unknown message type<" << (int)__messageType << ">";
-            THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-        }
-    }
+
 }
 
-QJsonDocument Message::createAck()
+AckMessage::AckMessage()
+    :Message(MessageType::ACK)
 {
-    QJsonDocument ackmsg;
-    QJsonObject root;
-    root["to"] = __to.c_str();
-    root["message_id"] = __messageId.c_str();
-    root["message_type"] = __typeString.c_str();
-    ackmsg.setObject(root);
-    return ackmsg;
-}
-QJsonDocument Message::createDownstream()
-{
-    QJsonDocument msg;
-    QJsonObject root;
-    root[msgfieldnames::TO] = __to.c_str();
-    root[msgfieldnames::MESSAGE_TYPE] = __typeString.c_str();
-    root[msgfieldnames::MESSAGE_ID] = __messageId.c_str();
-    root[msgfieldnames::TIME_TO_LIVE] = __timeToLive;
-
-    //TODO later
-    if (!__collapseKey.empty())
-        root["collapse_key"]= __collapseKey.c_str();
-    if (!__priority.empty())
-        root["priority"] = __priority.c_str();
-
-    if (!__contentAvailable.isNull())
-        root["content_available"] = __contentAvailable.toBool();
-    if (!__mutableContent.isNull())
-        root["mutable_content"] = __mutableContent.toBool();
-    if (!__deliveryRecieptRequested.isNull())
-        root["deliver_reciept_requested"] = __deliveryRecieptRequested.toBool();
-    if (!__dryRun.isNull())
-        root["dry_run"] = __dryRun.toBool();
-
-    root[msgfieldnames::FCM_DATA] = __data;
-
-    msg.setObject(root);
-    return msg;
 }
 
-void Message::validate()const
+AckMessage::~AckMessage()
 {
-    switch(__messageType)
-    {
-        case MessageType::ACK:
-        {
-            validateAck();
-            break;
-        }
-        case MessageType::DOWNSTREAM:
-        {
-            validateDownstream();
-            break;
-        }
-        default:
-        {
-            std::stringstream err;
-            err << "Unknown message type<" << (int)__messageType << ">";
-            THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-        }
-    }
+
 }
 
-void Message::validateAck() const
+void AckMessage::validateAck() const
 {
-    if (__to.empty())
-    {
-        std::stringstream err;
-        err << "Invalid ACK message. 'to' field cannot be empty.";
-        THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-    }
-    if (__messageId.empty())
+    if (getMessageId().empty())
     {
         std::stringstream err;
         err << "Invalid ACK message. 'message_id' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
-    if (__typeString != "ACK")
-    {
-        std::stringstream err;
-        err << "Invalid ACK message. 'message type' field is not set tp 'ack'.";
-        THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-    }
 }
 
-void Message::validateDownstream() const
+QJsonDocument AckMessage::toJson()
 {
-  std::cout << "Validate downstream mesage" << std::endl;
+    validateAck();
+
+    QJsonDocument ackmsg;
+    QJsonObject root;
+    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
+    root[msgfieldnames::MESSAGE_TYPE] = "ACK";
+    ackmsg.setObject(root);
+    return ackmsg;
+}
+
+
+/*!
+ * \brief DataMessage::DataMessage
+ */
+DataMessage::DataMessage()
+    : Message(MessageType::DOWNSTREAM),
+     __timeToLive(10)
+{
+}
+
+DataMessage::~DataMessage()
+{
+
+}
+
+QJsonDocument DataMessage::toJson()
+{
+    validate();
+
+    QJsonDocument msg;
+    QJsonObject root;
+
+    // pack gimmm header
+    root[msgfieldnames::MESSAGE_TYPE] = "DOWNSTREAM";
+    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
+    root[msgfieldnames::GROUP_ID] = getGroupId().c_str();
+
+    // pack fcm data
+    QJsonObject fcmdata;
+    fcmdata[fcmfieldnames::TO] = __to.c_str();
+    fcmdata[fcmfieldnames::MESSAGE_ID] = getMessageId().c_str();
+    fcmdata[fcmfieldnames::TIME_TO_LIVE] = __timeToLive;
+
+    if (!__collapseKey.empty())
+        fcmdata[fcmfieldnames::COLLAPSE_KEY]= __collapseKey.c_str();
+    if (!__priority.empty())
+        fcmdata[fcmfieldnames::PRIORITY] = __priority.c_str();
+    if (!__contentAvailable.isNull())
+        fcmdata[fcmfieldnames::CONTENT_AVAILABLE] = __contentAvailable.toBool();
+    if (!__mutableContent.isNull())
+        fcmdata[fcmfieldnames::MUTABLE_CONTENT] = __mutableContent.toBool();
+    if (!__deliveryRecieptRequested.isNull())
+        fcmdata[fcmfieldnames::DELIVER_RECIEPT_REQUESTED] = __deliveryRecieptRequested.toBool();
+    if (!__dryRun.isNull())
+        fcmdata[fcmfieldnames::DRY_RUN] = __dryRun.toBool();
+    if (!__data.empty())
+        fcmdata[fcmfieldnames::DATA] = __data;
+
+
+    root[msgfieldnames::FCM_DATA] = fcmdata;
+
+    msg.setObject(root);
+    return msg;
+}
+
+
+void DataMessage::validate()const
+{
+    std::cout << "Validate downstream mesage" << std::endl;
+    // validate gimmm header
     if (__to.empty() && __condition.empty())
     {
         std::stringstream err;
         err << "Invalid DOWNSTREAM message. Both 'to' && 'condition' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
-    if (__messageId.empty() == true)
+    if (getMessageId().empty() == true)
     {
         std::stringstream err;
         err << "Invalid DOWNSTREAM message. 'message_id' field cannot be empty.";
