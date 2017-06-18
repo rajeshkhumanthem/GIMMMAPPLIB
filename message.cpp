@@ -96,7 +96,7 @@ QJsonDocument Message::createDownstream()
     if (!__dryRun.isNull())
         root["dry_run"] = __dryRun.toBool();
 
-    root["data"] = __data;
+    root[msgfieldnames::FCM_DATA] = __data;
 
     msg.setObject(root);
     return msg;
