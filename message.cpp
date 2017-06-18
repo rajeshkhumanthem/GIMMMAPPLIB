@@ -76,10 +76,12 @@ QJsonDocument Message::createDownstream()
 {
     QJsonDocument msg;
     QJsonObject root;
-    root["to"] = __to.c_str();
-    root["message_id"] = __messageId.c_str();
-    root["time_to_live"] = __timeToLive;
+    root[msgfieldnames::TO] = __to.c_str();
+    root[msgfieldnames::MESSAGE_TYPE] = __typeString.c_str();
+    root[msgfieldnames::MESSAGE_ID] = __messageId.c_str();
+    root[msgfieldnames::TIME_TO_LIVE] = __timeToLive;
 
+    //TODO later
     if (!__collapseKey.empty())
         root["collapse_key"]= __collapseKey.c_str();
     if (!__priority.empty())
@@ -137,7 +139,7 @@ void Message::validateAck() const
         err << "Invalid ACK message. 'message_id' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
-    if (__typeString != "ack")
+    if (__typeString != "ACK")
     {
         std::stringstream err;
         err << "Invalid ACK message. 'message type' field is not set tp 'ack'.";
