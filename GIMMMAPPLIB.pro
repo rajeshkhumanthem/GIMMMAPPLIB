@@ -11,11 +11,11 @@ QT += testlib
 TARGET = gimmmapplibtest
 
 SOURCES += gimmmconnection.cpp  \
-           message.cpp \
+           gimmmmessage.cpp \
            unittests/gimmmapplibtest.cpp
 
 HEADERS += gimmmconnection.h    \
-           message.h            \
+           gimmmmessage.h            \
            exponentialbackoff.h \
            unittests/gimmmapplibtest.h
 

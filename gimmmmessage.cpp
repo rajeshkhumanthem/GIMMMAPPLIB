@@ -1,4 +1,4 @@
-#include "message.h"
+#include "gimmmmessage.h"
 
 #include <sstream>
 
@@ -78,7 +78,6 @@ QJsonDocument DataMessage::toJson()
     root[msgfieldnames::MESSAGE_TYPE] = "DOWNSTREAM";
     root[msgfieldnames::GROUP_ID] = getGroupId().c_str();
     root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
-    root[msgfieldnames::SESSION_ID] = getSessionId().c_str();
 
     // pack fcm data
     QJsonObject fcmdata;
@@ -123,12 +122,6 @@ void DataMessage::validate()const
     {
         std::stringstream err;
         err << "Invalid DOWNSTREAM message. 'message_id' field cannot be empty.";
-        THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
-    }
-    if (getSessionId().empty())
-    {
-        std::stringstream err;
-        err << "Invalid DOWNSTREAM message. Session Id cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
     if (__to.empty() && __condition.empty())

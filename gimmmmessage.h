@@ -13,7 +13,7 @@
 
 typedef std::uint64_t MessageId_t;
 typedef std::string   GroupId_t;
-typedef std::string   SessionId_t;
+//typedef std::string   SessionId_t;
 
 
 namespace msgfieldnames
@@ -92,7 +92,7 @@ class Message
         // start GIMMM header
         GroupId_t           __groupId;
         std::string         __messageId;
-        SessionId_t         __sessionId;
+        //SessionId_t         __sessionId;
         // End GIMMM header
     public:
         virtual QJsonDocument toJson() = 0;
@@ -102,12 +102,12 @@ class Message
         MessageType             getMessageType() const { return __messageType;}
         const std::string&      getMessageId() const { return __messageId;}
         const GroupId_t&        getGroupId() const { return __groupId;}
-        const SessionId_t&      getSessionId() const { return __sessionId;}
+        //const SessionId_t&      getSessionId() const { return __sessionId;}
 
         void setMessageType(MessageType type) { __messageType = type;}
         void setMessageId(const std::string& message_id) { __messageId = message_id;}
         void setGroupId(const std::string& group_id) { __groupId = group_id;}
-        void setSessionId(const std::string& sessid){ __sessionId = sessid;}
+        //void setSessionId(const std::string& sessid){ __sessionId = sessid;}
 };
 
 class AckMessage: public Message

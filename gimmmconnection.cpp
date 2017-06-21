@@ -1,6 +1,6 @@
 #include "gimmmconnection.h"
 #include "exponentialbackoff.h"
-#include "message.h"
+#include "gimmmmessage.h"
 
 #include <QDataStream>
 #include <QJsonDocument>
@@ -254,6 +254,7 @@ void GimmmConnection::handleDownstreamAckMessage(
  */
 void GimmmConnection::handleError(QAbstractSocket::SocketError error)
 {
+    //emit a human readable string instead of the enum.
     emit connectionError(__socket.errorString());
 }
 
@@ -274,7 +275,6 @@ void GimmmConnection::handleSendMessage(
 void GimmmConnection::sendMessage(
         const QJsonDocument& msg)
 {
-    // TODO remove this check so that error is pass backed to the application.
     if (__socket.isValid())
     {
         QByteArray m;
@@ -282,8 +282,6 @@ void GimmmConnection::sendMessage(
         out.setVersion(QDataStream::Qt_5_8);
         out << msg.toBinaryData();
 
-        //TODO delete later
-        //std::cout << "Attempting to write json message of length <" << m.length() <<  "> bytes." << std::endl;
-        qint64 bytes = __socket.write(m);
+        __socket.write(m);
     }
 }
