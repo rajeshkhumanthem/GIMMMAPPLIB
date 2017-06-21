@@ -8,14 +8,14 @@ QT += network
 QT += core
 QT += testlib
 
-TARGET = gimmmlibtest
+TARGET = gimmmapplibtest
 
 SOURCES += gimmmconnection.cpp  \
            message.cpp \
-           unittests/gimmmlibtest.cpp
+           unittests/gimmmapplibtest.cpp
 
 HEADERS += gimmmconnection.h    \
            message.h            \
            exponentialbackoff.h \
-           unittests/gimmmlibtest.h
+           unittests/gimmmapplibtest.h
 

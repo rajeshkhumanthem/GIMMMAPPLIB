@@ -1,10 +1,10 @@
-#include "gimmmlibtest.h"
+#include "gimmmapplibtest.h"
 
 #include "exponentialbackoff.h"
 #include "gimmmconnection.h"
 #include "message.h"
 
-void GimmmLibTest::expbackoffTestDefaultConstructor()
+void GimmmAppLibTest::expbackoffTestDefaultConstructor()
 {
     ExponentialBackoff ex;
     QVERIFY(ex.getRetry() == 0);
@@ -12,7 +12,7 @@ void GimmmLibTest::expbackoffTestDefaultConstructor()
 }
 
 
-void GimmmLibTest::expbackoffTestConstructorInitialValue()
+void GimmmAppLibTest::expbackoffTestConstructorInitialValue()
 {
     ExponentialBackoff ex1(1, 5);
     QVERIFY(ex1.getRetry() == 1);
@@ -23,7 +23,7 @@ void GimmmLibTest::expbackoffTestConstructorInitialValue()
 }
 
 
-void GimmmLibTest::expbackoffTestMaxRetry()
+void GimmmAppLibTest::expbackoffTestMaxRetry()
 {
 
     ExponentialBackoff ex1(1, 5);
@@ -37,4 +37,4 @@ void GimmmLibTest::expbackoffTestMaxRetry()
     }
 }
 
-QTEST_MAIN(GimmmLibTest)
+QTEST_MAIN(GimmmAppLibTest)

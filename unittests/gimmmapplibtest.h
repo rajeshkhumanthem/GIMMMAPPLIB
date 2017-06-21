@@ -1,5 +1,5 @@
-#ifndef GIMMMLIBTEST_H
-#define GIMMMLIBTEST_H
+#ifndef GIMMMAPPLIBTEST_H
+#define GIMMMAPPLIBTEST_H
 
 #include <QObject>
 
@@ -8,7 +8,7 @@
 /*You need to include the QTest header and declare the
 test functions as private slots so the test framework finds and executes it.
 */
-class GimmmLibTest: public QObject
+class GimmmAppLibTest: public QObject
 {
         Q_OBJECT
   private slots:
@@ -21,4 +21,4 @@ class GimmmLibTest: public QObject
 
 };
 
-#endif // GIMMMLIBTEST_H
+#endif // GIMMMAPPLIBTEST_H
