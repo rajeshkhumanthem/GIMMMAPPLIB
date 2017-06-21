@@ -52,11 +52,12 @@ class GimmmConnection: public QObject
         void newDownstreamRejectMessage(
             const QJsonDocument& orig_msg,
             const QString& reject_reason);
-        void newDownstreamRejectMessage(const QJsonDocument& orig_msg);
+        void newDownstreamAckMessage(const QJsonDocument& orig_msg);
     private:
         void handleNewMessage(const QJsonDocument& jdoc);
         void handleLogonResponseMessage(const QJsonDocument& jdoc);
         void handleUpstreamMessage(const QJsonDocument& jdoc);
+        void handleDownstreamAckMessage(const QJsonDocument& jdoc);
         void handleDownstreamRejectMessage(const QJsonDocument& jdoc);
         void tryConnect();
         void handleError(QAbstractSocket::SocketError error);

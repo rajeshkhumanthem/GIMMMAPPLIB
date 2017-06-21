@@ -76,8 +76,9 @@ QJsonDocument DataMessage::toJson()
 
     // pack gimmm header
     root[msgfieldnames::MESSAGE_TYPE] = "DOWNSTREAM";
-    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
     root[msgfieldnames::GROUP_ID] = getGroupId().c_str();
+    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
+    root[msgfieldnames::SESSION_ID] = getSessionId().c_str();
 
     // pack fcm data
     QJsonObject fcmdata;
@@ -110,18 +111,30 @@ QJsonDocument DataMessage::toJson()
 
 void DataMessage::validate()const
 {
-    std::cout << "Validate downstream mesage" << std::endl;
+    //std::cout << "Validate downstream mesage" << std::endl;
     // validate gimmm header
-    if (__to.empty() && __condition.empty())
+    if (getMessageType() == MessageType::UNKNOWN)
     {
         std::stringstream err;
-        err << "Invalid DOWNSTREAM message. Both 'to' && 'condition' field cannot be empty.";
+        err << "Invalid DOWNSTREAM message. Message type cannot be unknown.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
     if (getMessageId().empty() == true)
     {
         std::stringstream err;
         err << "Invalid DOWNSTREAM message. 'message_id' field cannot be empty.";
+        THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
+    }
+    if (getSessionId().empty())
+    {
+        std::stringstream err;
+        err << "Invalid DOWNSTREAM message. Session Id cannot be empty.";
+        THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
+    }
+    if (__to.empty() && __condition.empty())
+    {
+        std::stringstream err;
+        err << "Invalid DOWNSTREAM message. Both 'to' && 'condition' field cannot be empty.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
     // max is 4 week as per FCM documentation.

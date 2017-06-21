@@ -146,24 +146,28 @@ void GimmmConnection::handleReadyRead()
     __in.setDevice(0); // unset the current device.
     __in.setDevice(socket);
 
-    QByteArray bytes;
-    __in.startTransaction();
-    __in >> bytes;
-    if (!__in.commitTransaction())
-        return;
+    while (socket->bytesAvailable())
+    {
+        QByteArray bytes;
+        __in.startTransaction();
+        __in >> bytes;
+        if (!__in.commitTransaction())
+            return;
 
-    //std::cout<< "===============================START NEW GIMMM MESSAGE===========================================\n" ;
-    try
-    {
-        QJsonDocument jsondoc = QJsonDocument::fromBinaryData(bytes);
-        //PRINT_JSON_DOC_RAW(std::cout, jsondoc);
-        handleNewMessage(jsondoc);
+        //std::cout<< "===============================START NEW GIMMM MESSAGE===========================================\n" ;
+        //std::cout << "read [" << bytes.size() << "]" << std::endl;
+        try
+        {
+            QJsonDocument jsondoc = QJsonDocument::fromBinaryData(bytes);
+            //PRINT_JSON_DOC(std::cout, jsondoc);
+            handleNewMessage(jsondoc);
+        }
+        catch(std::exception& err)
+        {
+            PRINT_EXCEPTION_STRING(std::cout, err) << std::endl;
+        }
+        //std::cout<< "===============================END NEW GIMMM MESSAGE=============================================" << std::endl;
     }
-    catch(std::exception& err)
-    {
-        PRINT_EXCEPTION_STRING(std::cout, err) << std::endl;
-    }
-    //std::cout<< "===============================END NEW GIMMM MESSAGE=============================================" << std::endl;
 }
 
 
@@ -186,6 +190,10 @@ void GimmmConnection::handleNewMessage(
     else if (msgtype == "DOWNSTREAM_REJECT")
     {
         handleDownstreamRejectMessage(jdoc);
+    }
+    else if (msgtype == "DOWNSTREAM_ACK")
+    {
+        handleDownstreamAckMessage(jdoc);
     }
 }
 
@@ -232,6 +240,12 @@ void GimmmConnection::handleDownstreamRejectMessage(
 {
     QString reject_reason = jdoc.object().value(msgfieldnames::ERROR_DESC).toString();
     emit newDownstreamRejectMessage(jdoc, reject_reason);
+}
+
+void GimmmConnection::handleDownstreamAckMessage(
+        const QJsonDocument& jdoc)
+{
+    emit newDownstreamAckMessage(jdoc);
 }
 
 /*!
