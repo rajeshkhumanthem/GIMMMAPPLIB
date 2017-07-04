@@ -23,26 +23,37 @@ class GimmmApplication: public QObject
     public slots:
         // Application hooks. Override them as necessary.
         virtual void handleNewUpstreamMessage(const QJsonDocument& json);
+        virtual void handleNewDownstreamAckMessage(const QJsonDocument& json);
         virtual void handleNewDownstreamRejectMessage(
                         const QJsonDocument& json,
                         const QString& reject_reason);
-        virtual void handleConnectionStarted();
+        virtual void handleNewDownstreamReceiptMessage(
+                        const QJsonDocument& json);
+        virtual void handleConnectionStarted(int attemptno, int waittime);
+        virtual void handleConnectionError(int, const QString& error);
+        virtual void handleSessionEstablished();
+        virtual void handleConnectionLost();
+
         virtual void handleConnectionEstablished();
         virtual void handleConnectionShutdownStarted();
         virtual void handleConnectionShutdownCompleted();
-        virtual void handleConnectionError(const QString& error);
-        virtual void handleConnectionLost();
         virtual void handleConnectionHandshakeStarted();
-        virtual void handleSessionEstablished();
-        virtual std::string getNextMessageId();
+
         virtual void sendDownstreamMessage(const QJsonDocument& jdoc);
-        virtual void readConfigFile();
+        virtual void sendAckMessage(const QJsonDocument& orig_msg);
+        virtual std::string getNextMessageId();
    signals:
         void sendMessage(const QJsonDocument& jdoc);
    private:
         // setup functions
         void start();
         void setupGimmmStuff();
+        virtual void readConfigFile();
+   private slots:
+        void newUpstreamMessage(const QJsonDocument& json);
+        void newDownstreamAckMessage(const QJsonDocument& json);
+        void newDownstreamRejectMessage(const QJsonDocument& json);
+        void newDownstreamReceiptMessage(const QJsonDocument& json);
 };
 
 #endif // GIMMMAPPLICATION_H

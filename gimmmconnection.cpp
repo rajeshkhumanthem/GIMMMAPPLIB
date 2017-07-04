@@ -36,10 +36,9 @@
 /*!
  * \brief GimmmConnection::GimmmConnection
  */
-GimmmConnection::GimmmConnection()
+GimmmConnection::GimmmConnection(int max_retry)
       :__connectAttempt(0),
-       __connectWaitTime(5000),
-       __exBackOff(0, 5)
+        __maxRetry(max_retry)
 {
     __in.setVersion(QDataStream::Qt_5_8);
     connect( &__socket, &QAbstractSocket::connected,
@@ -80,31 +79,37 @@ void GimmmConnection::connectToServer(
 }
 
 
-/*!
- * \brief GimmmConnection::tryConnect
- */
 void GimmmConnection::tryConnect()
 {
-    if (__socket.state() == QAbstractSocket::ConnectedState)
+
+    __socket.connectToHost(__address, __port);
+    if ( __socket.waitForConnected())
     {
+        emit connectionEstablished();
         __connectAttempt = 0;
         __exBackOff.resetRetry();
         return;
     }
-    emit connectionStarted();
-    __connectAttempt++;
-    __socket.connectToHost(__address, __port);
+    retryConnectWithBackoff();
+}
 
-    int waittime = __exBackOff.next();
-    if ( waittime != -1)
+/*!
+ * \brief GimmmConnection::tryConnect
+ */
+void GimmmConnection::retryConnectWithBackoff()
+{
+    __connectAttempt++;
+    if(__connectAttempt > __maxRetry)
     {
-        std::cout << "Waittime:" << waittime << std::endl;
-        QTimer::singleShot(waittime, this, &GimmmConnection::tryConnect);
-    }else
-    {
-        emit connectionError("Cannot connect to the server. Goodbye!");
+        std::stringstream err;
+        err << "Max connection attempt[" << __maxRetry
+            <<"] reached. Cannot connect to the server. Goodbye!";
+        emit connectionError(-1, err.str().c_str());
         exit(0);
     }
+    int waittime = __exBackOff.next();
+    emit connectionStarted(__connectAttempt, waittime);
+    QTimer::singleShot(waittime, this, &GimmmConnection::tryConnect);
 }
 
 
@@ -113,8 +118,6 @@ void GimmmConnection::tryConnect()
  */
 void GimmmConnection::handleConnected()
 {
-    emit connectionEstablished();
-
     QJsonDocument jdoc;
     QJsonObject root;
     root[msgfieldnames::MESSAGE_TYPE]= "LOGON";
@@ -133,6 +136,7 @@ void GimmmConnection::handleConnected()
 void GimmmConnection::handleDisconnected()
 {
     emit connectionLost();
+    //try reconnecting right away.
     tryConnect();
 }
 
@@ -185,15 +189,19 @@ void GimmmConnection::handleNewMessage(
     }
     else if ( msgtype == "UPSTREAM")
     {
-        handleUpstreamMessage(jdoc);
+        emit newUpstreamMessage(jdoc);
     }
     else if (msgtype == "DOWNSTREAM_REJECT")
     {
-        handleDownstreamRejectMessage(jdoc);
+        emit newDownstreamRejectMessage(jdoc);
     }
     else if (msgtype == "DOWNSTREAM_ACK")
     {
-        handleDownstreamAckMessage(jdoc);
+        emit newDownstreamAckMessage(jdoc);
+    }
+    else if (msgtype == "DOWNSTREAM_RECEIPT")
+    {
+        emit newDownstreamReceiptMessage(jdoc);
     }
 }
 
@@ -212,40 +220,8 @@ void GimmmConnection::handleLogonResponseMessage(
     }else
     {
         QString reject_reason = jdoc.object().value(msgfieldnames::ERROR_DESC).toString();
-        emit connectionError(reject_reason);
+        emit connectionError(-1, reject_reason);
     }
-}
-
-
-/*!
- * \brief GimmmConnection::handleUpstreamMessage
- * \param msg
- */
-void GimmmConnection::handleUpstreamMessage(const QJsonDocument& msg)
-{
-    QJsonDocument upstream;
-    QJsonObject root = msg.object().value(msgfieldnames::FCM_DATA).toObject();
-    upstream.setObject(root);
-
-    emit newUpstreamMessage(upstream);
-}
-
-
-/*!
- * \brief GimmmConnection::handleDownstreamRejectMessage
- * \param jdoc
- */
-void GimmmConnection::handleDownstreamRejectMessage(
-        const QJsonDocument& jdoc)
-{
-    QString reject_reason = jdoc.object().value(msgfieldnames::ERROR_DESC).toString();
-    emit newDownstreamRejectMessage(jdoc, reject_reason);
-}
-
-void GimmmConnection::handleDownstreamAckMessage(
-        const QJsonDocument& jdoc)
-{
-    emit newDownstreamAckMessage(jdoc);
 }
 
 /*!
@@ -255,7 +231,7 @@ void GimmmConnection::handleDownstreamAckMessage(
 void GimmmConnection::handleError(QAbstractSocket::SocketError error)
 {
     //emit a human readable string instead of the enum.
-    emit connectionError(__socket.errorString());
+    emit connectionError((int)error, __socket.errorString());
 }
 
 /*!

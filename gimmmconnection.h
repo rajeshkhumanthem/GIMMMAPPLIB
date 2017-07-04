@@ -23,10 +23,10 @@ class GimmmConnection: public QObject
         quint16             __port;
         std::string         __sessionId;
         int                 __connectAttempt;
-        int                 __connectWaitTime;
         ExponentialBackoff  __exBackOff;
+        int                 __maxRetry;
     public:
-        GimmmConnection();
+        GimmmConnection(int max_retry = 6);
         virtual ~GimmmConnection();
         void connectToServer(const QHostAddress& hostadd,
                              quint16 portno,
@@ -39,20 +39,20 @@ class GimmmConnection: public QObject
         void handleReadyRead();
         void handleSendMessage(const QJsonDocument& upstream_msg);
     signals:
-        void connectionStarted();
+        void connectionStarted(int attemptno, int waittime);
         void connectionEstablished();
         void connectionShutdownStarted();
         void connectionShutdownCompleted();
-        void connectionError(QString error);
+        void connectionError(int errorno, QString error);
         void connectionLost();
         void sessionEstablished();
         void connectionHandshakeStarted();
+        void maxConnectionAttemptReached(int max_attempt);
 
         void newUpstreamMessage(const QJsonDocument& upstream_msg);
-        void newDownstreamRejectMessage(
-            const QJsonDocument& orig_msg,
-            const QString& reject_reason);
         void newDownstreamAckMessage(const QJsonDocument& orig_msg);
+        void newDownstreamReceiptMessage(const QJsonDocument& orig_msg);
+        void newDownstreamRejectMessage(const QJsonDocument& orig_msg);
     private:
         void handleNewMessage(const QJsonDocument& jdoc);
         void handleLogonResponseMessage(const QJsonDocument& jdoc);
@@ -60,6 +60,7 @@ class GimmmConnection: public QObject
         void handleDownstreamAckMessage(const QJsonDocument& jdoc);
         void handleDownstreamRejectMessage(const QJsonDocument& jdoc);
         void tryConnect();
+        void retryConnectWithBackoff();
         void handleError(QAbstractSocket::SocketError error);
         void sendMessage(const QJsonDocument& upstream_msg);
 };

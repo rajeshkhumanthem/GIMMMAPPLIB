@@ -10,7 +10,8 @@
 
 
 Message::Message(MessageType type)
-    :__messageType(type)
+    :__messageType(type),
+     __sequenceId(0)
 {
 
 }
@@ -20,9 +21,27 @@ Message::~Message()
 
 }
 
-AckMessage::AckMessage()
+std::string Message::getMessageTypeString(MessageType type)
+{
+    switch (type)
+    {
+        case MessageType::ACK:
+            return std::string("ACK");
+        case MessageType::DOWNSTREAM:
+            return std::string("DOWNSTREAM");
+        default:
+            {
+                std::stringstream err;
+                err << "Invalid message type [" << (int)type << "]found.";
+                THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
+            }
+    }
+}
+
+AckMessage::AckMessage(const SequenceId_t& seqid)
     :Message(MessageType::ACK)
 {
+      setSequenceId(seqid);
 }
 
 AckMessage::~AckMessage()
@@ -32,10 +51,10 @@ AckMessage::~AckMessage()
 
 void AckMessage::validateAck() const
 {
-    if (getMessageId().empty())
+    if (getSequenceId() == 0)
     {
         std::stringstream err;
-        err << "Invalid ACK message. 'message_id' field cannot be empty.";
+        err << "Invalid ACK message. 'sequence_id' field cannot be zero.";
         THROW_INVALID_ARGUMENT_EXCEPTION(err.str());
     }
 }
@@ -46,8 +65,10 @@ QJsonDocument AckMessage::toJson()
 
     QJsonDocument ackmsg;
     QJsonObject root;
-    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
-    root[msgfieldnames::MESSAGE_TYPE] = "ACK";
+    root[msgfieldnames::SEQUENCE_ID] = getSequenceId();
+
+    std::string msg_type = getMessageTypeString(getMessageType());
+    root[msgfieldnames::MESSAGE_TYPE] = msg_type.c_str();
     ackmsg.setObject(root);
     return ackmsg;
 }
@@ -75,9 +96,10 @@ QJsonDocument DataMessage::toJson()
     QJsonObject root;
 
     // pack gimmm header
-    root[msgfieldnames::MESSAGE_TYPE] = "DOWNSTREAM";
+    std::string msg_type = getMessageTypeString(getMessageType());
+    root[msgfieldnames::MESSAGE_TYPE] = msg_type.c_str();
     root[msgfieldnames::GROUP_ID] = getGroupId().c_str();
-    root[msgfieldnames::MESSAGE_ID] = getMessageId().c_str();
+    root[msgfieldnames::FCM_MESSAGE_ID] = getMessageId().c_str();
 
     // pack fcm data
     QJsonObject fcmdata;

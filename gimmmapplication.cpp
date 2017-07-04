@@ -1,4 +1,5 @@
 #include "gimmmapplication.h"
+#include "gimmmmessage.h"
 
 #include <iostream>
 #include <sstream>
@@ -90,18 +91,18 @@ std::string GimmmApplication::getNextMessageId()
 void GimmmApplication::setupGimmmStuff()
 {
     // setup signal handlers
-    connect(&__gimmmConn, SIGNAL(connectionStarted()),             this, SLOT(handleConnectionStarted()));
+    connect(&__gimmmConn, SIGNAL(connectionStarted(int, int)),     this, SLOT(handleConnectionStarted(int, int)));
     connect(&__gimmmConn, SIGNAL(connectionEstablished()),         this, SLOT(handleConnectionEstablished()));
     connect(&__gimmmConn, SIGNAL(connectionHandshakeStarted()),    this, SLOT(handleConnectionHandshakeStarted()));
     connect(&__gimmmConn, SIGNAL(sessionEstablished()),            this, SLOT(handleSessionEstablished()));
     connect(&__gimmmConn, SIGNAL(connectionShutdownStarted()),     this, SLOT(handleConnectionShutdownStarted()));
     connect(&__gimmmConn, SIGNAL(connectionShutdownCompleted()),   this, SLOT(handleConnectionShutdownCompleted()));
     connect(&__gimmmConn, SIGNAL(connectionLost()),                this, SLOT(handleConnectionLost()));
-    connect(&__gimmmConn, SIGNAL(connectionError(const QString&)), this, SLOT(handleConnectionError(const QString&)));
-    connect(&__gimmmConn, SIGNAL(newUpstreamMessage(const QJsonDocument&)),this, SLOT(handleNewUpstreamMessage(const QJsonDocument&)));
-
-    connect(&__gimmmConn, SIGNAL(newDownstreamRejectMessage(const QJsonDocument&, const QString&)),
-            this, SLOT(handleNewDownstreamRejectMessage(const QJsonDocument&, const QString&)));
+    connect(&__gimmmConn, SIGNAL(connectionError(int, const QString&)), this, SLOT(handleConnectionError(int, const QString&)));
+    connect(&__gimmmConn, SIGNAL(newUpstreamMessage(const QJsonDocument&)),this, SLOT(newUpstreamMessage(const QJsonDocument&)));
+    connect(&__gimmmConn, SIGNAL(newDownstreamAckMessage(const QJsonDocument&)),this, SLOT(newDownstreamAckMessage(const QJsonDocument&)));
+    connect(&__gimmmConn, SIGNAL(newDownstreamRejectMessage(const QJsonDocument&)), this, SLOT(newDownstreamRejectMessage(const QJsonDocument&)));
+    connect(&__gimmmConn, SIGNAL(newDownstreamReceiptMessage(const QJsonDocument&)),this, SLOT(newDownstreamReceiptMessage(const QJsonDocument&)));
 
     //setup queued connection to fcmconn for sending downstream message to FCM.
     connect(this, SIGNAL(sendMessage(const QJsonDocument&)),&__gimmmConn, SLOT(handleSendMessage(const QJsonDocument&)));
@@ -114,10 +115,15 @@ void GimmmApplication::sendDownstreamMessage(const QJsonDocument &jdoc)
     emit sendMessage(jdoc);
 }
 
-void GimmmApplication::handleConnectionStarted()
+void GimmmApplication::sendAckMessage(const QJsonDocument& orig_msg)
 {
-}
+    SequenceId_t seqid = orig_msg.object().value(msgfieldnames::SEQUENCE_ID).toInt();
 
+    AckMessage ackmsg(seqid);
+    QJsonDocument jdoc = ackmsg.toJson();
+
+    emit sendMessage(jdoc);
+}
 
 void GimmmApplication::handleConnectionEstablished()
 {
@@ -125,16 +131,6 @@ void GimmmApplication::handleConnectionEstablished()
 
 
 void GimmmApplication::handleConnectionHandshakeStarted()
-{
-}
-
-
-void GimmmApplication::handleSessionEstablished()
-{
-}
-
-
-void GimmmApplication::handleConnectionLost()
 {
 }
 
@@ -148,19 +144,101 @@ void GimmmApplication::handleConnectionShutdownCompleted()
 {
 }
 
-
-void GimmmApplication::handleConnectionError(const QString& error)
+void GimmmApplication::handleNewUpstreamMessage(const QJsonDocument &json)
 {
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    PRINT_JSON_DOC(std::cout, json);
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleNewDownstreamAckMessage(const QJsonDocument &json)
+{
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    PRINT_JSON_DOC(std::cout, json);
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleNewDownstreamRejectMessage(const QJsonDocument &json, const QString &reject_reason)
+{
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    PRINT_JSON_DOC(std::cout, json);
+    std::cout << reject_reason.toStdString() << std::endl;
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleNewDownstreamReceiptMessage(const QJsonDocument &json)
+{
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    PRINT_JSON_DOC(std::cout, json);
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleConnectionStarted(int attemptno, int waittime)
+{
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    std::cout << "Connecting to GIMMM server, connection attempt#:" << attemptno
+              << ", Will connect after Waittime(msec):" << waittime << std::endl;
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleConnectionError(int, const QString& error)
+{
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+    std::cout << "ERROR: Connection error:" << error.toStdString() << std::endl;
+    std::cout << "--------------------------------------------------------------------------------------------------"  << std::endl;
+}
+
+void GimmmApplication::handleConnectionLost()
+{
+
+}
+
+void GimmmApplication::handleSessionEstablished()
+{
+
+}
+
+void GimmmApplication::newUpstreamMessage(const QJsonDocument& bal_msg)
+{
+    QJsonDocument upstream;
+    QJsonObject root = bal_msg.object().value(msgfieldnames::FCM_DATA).toObject();
+    upstream.setObject(root);
+    handleNewUpstreamMessage(upstream);
+
+    sendAckMessage(bal_msg);
+}
+
+void GimmmApplication::newDownstreamAckMessage(const QJsonDocument& bal_msg)
+{
+    QJsonDocument ack_msg;
+    QJsonObject root = bal_msg.object().value(msgfieldnames::FCM_DATA).toObject();
+    ack_msg.setObject(root);
+    handleNewDownstreamAckMessage(ack_msg);
+
+    sendAckMessage(bal_msg);
 }
 
 
-void GimmmApplication::handleNewUpstreamMessage(const QJsonDocument& client_msg)
+void GimmmApplication::newDownstreamRejectMessage(
+    const QJsonDocument& bal_msg)
 {
+    QJsonDocument orig_msg;
+    QJsonObject root = bal_msg.object().value(msgfieldnames::FCM_DATA).toObject();
+    orig_msg.setObject(root);
+
+    QString reject_reason = bal_msg.object().value(msgfieldnames::ERROR_DESC).toString();
+
+    handleNewDownstreamRejectMessage(orig_msg, reject_reason);
+    sendAckMessage(bal_msg);
 }
 
-
-void GimmmApplication::handleNewDownstreamRejectMessage(
-    const QJsonDocument& client_msg,
-    const QString& reject_reason)
+void GimmmApplication::newDownstreamReceiptMessage(
+    const QJsonDocument& bal_msg)
 {
+    QJsonDocument recpt_msg;
+    QJsonObject root = bal_msg.object().value(msgfieldnames::FCM_DATA).toObject();
+    recpt_msg.setObject(root);
+
+    handleNewDownstreamReceiptMessage(recpt_msg);
+    sendAckMessage(bal_msg);
 }
