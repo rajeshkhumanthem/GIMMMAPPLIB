@@ -65,7 +65,7 @@ QJsonDocument AckMessage::toJson()
 
     QJsonDocument ackmsg;
     QJsonObject root;
-    root[msgfieldnames::SEQUENCE_ID] = getSequenceId();
+    root[msgfieldnames::SEQUENCE_ID] = (qint64)getSequenceId();
 
     std::string msg_type = getMessageTypeString(getMessageType());
     root[msgfieldnames::MESSAGE_TYPE] = msg_type.c_str();

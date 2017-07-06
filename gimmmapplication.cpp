@@ -80,7 +80,7 @@ void GimmmApplication::readConfigFile()
 std::string GimmmApplication::getNextMessageId()
 {
     std::int64_t nextid = ++__currentMessageId;
-    __ini->setValue("APP_SECTION/message_sequence_no",  nextid);
+    __ini->setValue("APP_SECTION/message_sequence_no",  (qint64)nextid);
     __ini->sync();
 
     std::stringstream next;
